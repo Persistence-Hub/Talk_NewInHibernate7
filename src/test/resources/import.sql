@@ -1,0 +1,1 @@
+INSERT INTO ChessPlayer(id, firstname, lastname, version) VALUES (nextval('ChessPlayer_SEQ'), 'Magnus', 'Carlsen', 0);

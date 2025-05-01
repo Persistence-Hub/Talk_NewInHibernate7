@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.1"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+	<persistence-unit name="my-persistence-unit">
+        <description>Persistence-Hub.com</description>
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<class>com.thorben.janssen.model.ChessPlayer</class>
+		<class>com.thorben.janssen.model.ChessClub</class>
+		<exclude-unlisted-classes>false</exclude-unlisted-classes>
+		<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
+		<properties>
+			<property name="hibernate.generate_statistics" value="true" />
+
+			<property name="hibernate.highlight_sql" value="true"/>
+			<property name="hibernate.format_sql" value="true"/>
+			
+			<property name="hibernate.jdbc.batch_size" value="5"/>
+
+			<property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/postgres" />
+			<property name="jakarta.persistence.jdbc.user" value="postgres" />
+			<property name="jakarta.persistence.jdbc.password" value="postgres" />
+
+			<property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create" />
+
+			<!-- define factory class for 2nd level cache -->
+			<property name="hibernate.cache.region.factory_class" value="jcache"/>
+			<property name="hibernate.javax.cache.provider" value="org.ehcache.jsr107.EhcacheCachingProvider"/>
+
+			<property name="hibernate.javax.cache.missing_cache_strategy" value="create"/>
+		</properties>
+	</persistence-unit>
+</persistence>

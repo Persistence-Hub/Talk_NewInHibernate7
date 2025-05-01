@@ -1,0 +1,12 @@
+version: '3.8'
+
+volumes:
+  postgres-data:
+
+services:
+  db:
+    extends:
+      file: .devcontainer/docker-compose.yml
+      service: db
+    ports:
+      - 5432:5432
