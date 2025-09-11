@@ -125,7 +125,7 @@ public class TestHibernate7 {
 		em.getTransaction().begin();
 
 		SelectionQuery query = SelectionSpecification.create(ChessPlayer.class, "FROM ChessPlayer")
-														.restrict(Restriction.like(ChessPlayer_.firstName, "Thor*")
+														.restrict(Restriction.like(ChessPlayer_.firstName, "Thor%")
 																			.or(Restriction.equal(ChessPlayer_.firstName, "Paul")))
 														.createQuery(em);
 		query.getResultList();
