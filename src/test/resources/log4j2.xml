@@ -6,6 +6,8 @@
     </Console>
   </Appenders>
   <Loggers>
+    <Logger name="org.hibernate" level="debug"/>
+
     <Logger name="org.hibernate.stat" level="debug"/>
     <Logger name="org.hibernate.cache" level="debug"/>
     <Logger name="org.hibernate.SQL" level="debug"/>

@@ -1,14 +1,11 @@
 package com.thorben.janssen.model;
 
 import jakarta.persistence.*;
-import org.hibernate.envers.Audited;
-import org.hibernate.envers.NotAudited;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Audited
 public class ChessClub {
 
     @Id
@@ -20,7 +17,6 @@ public class ChessClub {
     @Embedded
     private Address address;
 
-    @NotAudited
     @OneToMany(mappedBy = ChessPlayer_.CLUB)
     private List<ChessPlayer> players = new ArrayList<>();
 

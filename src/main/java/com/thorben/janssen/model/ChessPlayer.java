@@ -1,10 +1,17 @@
 package com.thorben.janssen.model;
 
 import jakarta.persistence.*;
-import org.hibernate.envers.Audited;
+//import org.hibernate.annotations.Audited;
+//import org.hibernate.annotations.Temporal;
 
 @Entity
-@Cacheable
+//@Cacheable
+
+//@Temporal
+//@Temporal.HistoryTable(name = "ChessPlayer_HIST")
+//@Audited
+//@Audited.Table(name = "ChessPlayer_Audit")
+
 @NamedQuery(name = "findPlayersByFirstName", query = "SELECT p FROM ChessPlayer p WHERE p.firstName = :firstName")
 public class ChessPlayer {
     
@@ -67,5 +74,16 @@ public class ChessPlayer {
 
     public void setPlayerType(PlayerType playerType) {
         this.playerType = playerType;
+    }
+
+    @Override
+    public String toString() {
+        return "ChessPlayer{" +
+                "version=" + version +
+                ", playerType=" + playerType +
+                ", lastName='" + lastName + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", id=" + id +
+                '}';
     }
 }
