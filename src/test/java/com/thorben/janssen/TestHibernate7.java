@@ -8,10 +8,9 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.CacheMode;
-import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
-import org.hibernate.Transaction;
+import org.hibernate.*;
+import org.hibernate.audit.AuditLog;
+import org.hibernate.audit.AuditLogFactory;
 import org.hibernate.query.Order;
 import org.hibernate.query.SelectionQuery;
 import org.hibernate.query.range.Range;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,11 +107,12 @@ public class TestHibernate7 {
 		EntityManager em = emf.createEntityManager();
 		em.getTransaction().begin();
 
-		SelectionQuery query = SelectionSpecification.create(ChessPlayer.class, "FROM ChessPlayer p")
-														.restrict(Restriction.like(ChessPlayer_.firstName, "Thor%"))
+		SelectionQuery<ChessPlayer> query = SelectionSpecification.create(ChessPlayer.class, "FROM ChessPlayer p")
+														.restrict(Restriction.like(ChessPlayer_.firstName, "Mag%"))
 //														.restrict(Restriction.startsWith(ChessPlayer_.firstName, "Thor"))
 														.createQuery(em);
-		query.getResultList();
+		var player = query.getResultList().get(0);
+        log.info(player);
 
 		em.getTransaction().commit();
 		em.close();
@@ -181,6 +182,173 @@ public class TestHibernate7 {
 
 
 	/**
+	 * Hibernate 7.4
+	 */
+
+	@Test
+	public void testJoinFetchLimit() {
+		log.info("... testJoinFetchLimit ...");
+
+		EntityManager em = emf.createEntityManager();
+		em.getTransaction().begin();
+
+		var clubs = em.createQuery("SELECT c FROM ChessClub c JOIN FETCH c.players", ChessClub.class).setMaxResults(2).getResultList();
+
+		em.getTransaction().commit();
+		em.close();
+	}
+
+	@Test
+	public void testTemporal() {
+		log.info("... testTemporal ...");
+
+		Long playerId;
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = new ChessPlayer();
+			player.setFirstName("Magnus");
+			player.setLastName("Carlsen");
+
+			var club = new ChessClub();
+			club.setName("St. Pauli");
+			club.getPlayers().add(player);
+			player.setClub(club);
+
+			em.persist(club);
+			em.persist(player);
+
+			em.getTransaction().commit();
+			playerId = player.getId();
+		}
+
+		var instant = Instant.now();
+
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = em.find(ChessPlayer.class, playerId);
+			player.setFirstName("ChangedPlayerName");
+
+			em.getTransaction().commit();
+		}
+
+		try (var session = emf.unwrap(SessionFactory.class)
+				.withOptions()
+				.asOf(instant)
+				.open()) {
+			session.getTransaction().begin();
+
+			var player = session.find(ChessPlayer.class, playerId);
+			log.info(player.toString());
+
+			session.getTransaction().commit();
+		}
+	}
+
+
+	@Test
+	public void testAudited() {
+		log.info("... testAudited ...");
+
+		Long playerId;
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = new ChessPlayer();
+			player.setFirstName("Magnus");
+			player.setLastName("Carlsen");
+
+			var club = new ChessClub();
+			club.setName("St. Pauli");
+			club.getPlayers().add(player);
+			player.setClub(club);
+
+			em.persist(club);
+			em.persist(player);
+
+			em.getTransaction().commit();
+			playerId = player.getId();
+		}
+
+		var instant = Instant.now();
+
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = em.find(ChessPlayer.class, playerId);
+			player.setFirstName("ChangedPlayerName");
+
+			em.getTransaction().commit();
+		}
+
+		try (var auditLog = AuditLogFactory.create(emf)) {
+			var changeSetId = auditLog.getChangesetId(instant);
+
+			try (var session = emf.unwrap(SessionFactory.class)
+					.withOptions()
+					.atChangeset(changeSetId)
+					.open()) {
+
+				session.getTransaction().begin();
+
+				var player = session.find(ChessPlayer.class, playerId);
+				log.info(player.toString());
+
+				session.getTransaction().commit();
+			}
+		}
+	}
+
+	@Test
+	public void testAudited_Query() {
+		log.info("... testAudited_Query ...");
+
+		Long playerId;
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = new ChessPlayer();
+			player.setFirstName("Magnus");
+			player.setLastName("Carlsen");
+
+			var club = new ChessClub();
+			club.setName("St. Pauli");
+			club.getPlayers().add(player);
+			player.setClub(club);
+
+			em.persist(club);
+			em.persist(player);
+
+			em.getTransaction().commit();
+			playerId = player.getId();
+		}
+
+		var instant = Instant.now();
+
+		try (var em = emf.createEntityManager()) {
+			em.getTransaction().begin();
+
+			var player = em.find(ChessPlayer.class, playerId);
+			player.setFirstName("ChangedPlayerName");
+
+			em.getTransaction().commit();
+		}
+
+		try (var session = emf.unwrap(SessionFactory.class)
+				.withOptions()
+				.atChangeset(AuditLog.ALL_CHANGESETS)
+				.open()) {
+			session.getTransaction().begin();
+
+			var players = session.createQuery("SELECT p, changesetId(p) FROM ChessPlayer p WHERE p.id = :id", Object[].class).setParameter("id", playerId).getResultList();
+			players.forEach(p -> log.info("Revision " + p[1] + ": " + p[0]));
+
+			session.getTransaction().commit();
+		}
+	}
+
+	/**
 	 * Jakarta Persistence 3.2
 	 */
 	@Test
@@ -231,24 +399,7 @@ public class TestHibernate7 {
 		em.close();
 	}
 
-	/**
-	 * Hibernate Envers
-	 */
-	@Test
-	public void testCustomRevision() {
-		log.info("... testCustomRevision ...");
 
-		EntityManager em = emf.createEntityManager();
-		em.getTransaction().begin();
-
-		ChessClub club = new ChessClub();
-		club.setName("My Local Club");
-		club.setAddress(new Address("Main Street", "My Local Town", "Here", "12345"));
-		em.persist(club);
-
-		em.getTransaction().commit();
-		em.close();
-	}
 
 
 	@BeforeAll

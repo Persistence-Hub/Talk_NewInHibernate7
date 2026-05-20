@@ -7,6 +7,7 @@
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<class>com.thorben.janssen.model.ChessPlayer</class>
 		<class>com.thorben.janssen.model.ChessClub</class>
+		<class>com.thorben.janssen.model.ChangesetInfo</class>
 		<exclude-unlisted-classes>false</exclude-unlisted-classes>
 		<shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 		<properties>
