@@ -111,7 +111,8 @@ public class TestHibernate7 {
 														.restrict(Restriction.like(ChessPlayer_.firstName, "Mag%"))
 //														.restrict(Restriction.startsWith(ChessPlayer_.firstName, "Thor"))
 														.createQuery(em);
-		query.getResultList().get(0).setFirstName("bla");
+		var player = query.getResultList().get(0);
+        log.info(player);
 
 		em.getTransaction().commit();
 		em.close();

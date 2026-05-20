@@ -10,7 +10,7 @@ import org.hibernate.annotations.Audited;
 
 //@Temporal
 //@Temporal.HistoryTable(name = "ChessPlayer_HIST")
-@Audited
+//@Audited
 //@Audited.Table(name = "ChessPlayer_Audit")
 
 @NamedQuery(name = "findPlayersByFirstName", query = "SELECT p FROM ChessPlayer p WHERE p.firstName = :firstName")
